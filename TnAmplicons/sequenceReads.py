@@ -151,8 +151,8 @@ class TwoSequenceReadSet:
         Create four line string ('\n' separator included) for the read pair, returning a length 2 vector (one for each read)
         """
         if self.primer[0] is not None:
-            read1_name = "%s*%s|%s*%s*%s 1:N:0:%s" % (self.name, self.barcode, self.primer[0], self.primer[1], self.primer[2], self.barcode)
-            read2_name = "%s*%s|Linker*%s*%s|%s*%s*%s 2:N:0:%s" % (self.name, self.barcode, self.linker[0], self.linker[1], self.primer[0], self.primer[5], self.primer[6], self.barcode)
+            read1_name = "%s*%s|Linker*%s*%s|%s|%s*%s*%s*%s*%s 1:N:0:%s" % (self.name, self.barcode, self.linker[0], self.linker[1], self.MI2, self.primer[0], self.primer[1], self.primer[2], self.primer[5], self.primer[6], self.barcode)
+            read2_name = "%s*%s|Linker*%s*%s|%s|%s*%s*%s*%s*%s 2:N:0:%s" % (self.name, self.barcode, self.linker[0], self.linker[1], self.MI2, self.primer[0], self.primer[1], self.primer[2], self.primer[5], self.primer[6], self.barcode)
             r1 = '\n'.join([read1_name, self.read_1[(self.primer[4]-2):self.trim_left], '+', self.qual_1[(self.primer[4]-2):self.trim_left]])
             r2 = '\n'.join([read2_name, self.read_2[self.primer[8]:self.trim_right], '+', self.qual_2[self.primer[8]:self.trim_right]])
         else:

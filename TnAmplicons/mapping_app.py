@@ -202,14 +202,13 @@ class mappingApp:
                             if (flag & 0x10):  # reverse complement
                                 line2[9] = reverseComplement(line2[9])
                                 line2[10] = reverse(line2[10])
-                            self.run_out["unmapped_singles"].addRead(['\n'.join(['@' + line2[0].replace('_:_', ' '), line2[9], line2[10]])])
+                            self.run_out["unmapped_singles"].addRead(['\n'.join(['@' + line2[0].replace('_:_', ' '), line2[9], '+', line2[10]])])
                             unmapped_singles_count += 1
                         continue
                     # Handle PE:
                     # logic:  0x1 = multiple segments in sequencing,   0x4 = segment unmapped,  0x8 = next segment unmapped
                     if (flag & 0x1):  # PE READ
-                        if ((not (flag & 0x4) and not (flag & 0x8)) or  # both pairs mapped
-                                ((not (flag & 0x4) or not (flag & 0x8)))):  # at least one of the pair mapped
+                        if ((not (flag & 0x4) and not (flag & 0x8))):  # at least one of the pair mapped
                             if (flag & 0x40):  # is this PE1 (first segment in template)
                                 # PE1 read, check that PE2 is in dict and write out
                                 ID = line2[0].split('_:_')[0]
