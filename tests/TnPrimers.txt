@@ -1,0 +1,13 @@
+# the sequence TGTTA has been added on to the end of the R1 primers
+# and is the trasition point of the transposon and the genome,
+# the final TA is genomic and is left on the read (not removed).
+#Read    Primer_ID   Sequence
+Linker	Sol_AP1-1	GTCAATGATGGCCGGTGGATTTGTG
+Linker	Sol_AP1-2	CGTCCATGATGGCCGGTGGATTTGTG
+Linker	Sol_AP1-3	ACAGTCCCATGATGGCCGGTGGATTTGTG
+Linker	Sol_AP1-4	TAGTGGATGATGGCCGGTGGATTTGTG
+R1	Sol_Mar	CGGGGACTTATCAGCCAACCTGTTA
+R1	Sol_Mar_1b	TCGGGGACTTATCAGCCAACCTGTTA
+R1	Sol_Mar_4b	GATACGGGGACTTATCAGCCAACCTGTTA
+R1	Sol_Mar_5b	ATCTACGGGGACTTATCAGCCAACCTGTTA
+R2	Adapter_2.2_Bar_B	TGGTCGTGGTAT
