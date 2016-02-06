@@ -88,7 +88,7 @@ def preprocessParser(subparsers):
     preprocess_parser.add_argument('-d', '--primerdiff', help='max hamming dist from primer [default: %(default)s]',
                         type=int, dest='primerdiff', default=4)
     preprocess_parser.add_argument('-e', '--primerend', help='required number of matching bases at end of primer [default: %(default)s]',
-                        type=int, dest='primerend', default=6)
+                        type=int, dest='primerend', default=4)
     preprocess_parser.add_argument('-t', '--insersionSite', help='The expected genomic insersion site [default: %(default)s]',
                         action='store', type=str, dest='insertionSite', metavar='TA', default='TA')
     preprocess_parser.add_argument('-S', '--sample_file', help='tab delimited file for multi-sample processing (NOT YET FUNCTIONAL) [default: %(default)s]',
@@ -269,6 +269,8 @@ def mappingParser(subparsers):
                                   type=int, dest='minins', default=0)
     screening_parser.add_argument('-X', '--maxins', metavar='<int>', help='maximum fragement length [default: %(defaults)s]',
                                   type=int, dest='maxins', default=700)
+    screening_parser.add_argument('-m', '--mapq', metavar='<int>', help='minimum mapq value to accept read [default: %(defaults)s]',
+                                  type=int, dest='mapq', default=10)
     screening_parser.add_argument('-O', '--output_path', help='path (and prefix) for output files [default: %(default)s]',
                                   action='store', type=str, dest='output_base', metavar='outputPrefix', default='screening')
     screening_parser.add_argument('-1', metavar="read1", dest='fastq_file1', help='read1 of an amplicon fastq two file set',
@@ -322,10 +324,10 @@ class mappingCMD:
 
         if profile:
             import cProfile
-            cProfile.runctx('app.start(args.fastq_file1, args.fastq_file2, args.fastq_file3, reference, overwrite, sensitivity, output_prefix, args.minins, args.maxins, procs, uncompressed, verbose, debug)', globals(), locals())
+            cProfile.runctx('app.start(args.fastq_file1, args.fastq_file2, args.fastq_file3, reference, overwrite, sensitivity, output_prefix, args.minins, args.maxins, procs, args.mapq, uncompressed, verbose, debug)', globals(), locals())
             return 255
         else:
-            return app.start(args.fastq_file1, args.fastq_file2, args.fastq_file3, reference, overwrite, sensitivity, output_prefix, args.minins, args.maxins, procs, uncompressed, verbose, debug)
+            return app.start(args.fastq_file1, args.fastq_file2, args.fastq_file3, reference, overwrite, sensitivity, output_prefix, args.minins, args.maxins, procs, args.mapq, uncompressed, verbose, debug)
 
 
 #####################################################################################

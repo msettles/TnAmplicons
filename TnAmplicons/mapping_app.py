@@ -8,8 +8,7 @@ import signal
 from subprocess import Popen
 from subprocess import PIPE
 
-from dbcAmplicons import IlluminaTwoReadOutput
-from dbcAmplicons import IlluminaOneReadOutput
+from dbcAmplicons import misc
 
 
 def sp_bowtie2_index(ref, overwrite=False):
@@ -137,24 +136,24 @@ class mappingApp:
     def __init__(self):
         self.verbose = False
 
-    def start(self, fastq_file1, fastq_file2, fastq_file3, reference, overwrite, sensitivity, output_prefix, minins, maxins, procs, uncompressed=False, verbose=True, debug=False):
+    def start(self, fastq_file1, fastq_file2, fastq_file3, reference, overwrite, sensitivity, output_prefix, minins, maxins, procs, mapq, uncompressed=False, verbose=True, debug=False):
         """
             screen reads against a reference fasta file
         """
         self.verbose = verbose
         try:
             mapped_pairs_count = 0
+            mapped_pairs_lowqual = 0
             unmapped_pairs_count = 0
             mapped_singles_count = 0
+            mapped_singles_lowqual = 0
             unmapped_singles_count = 0
             secondary_alignment = 0
 
             # Set up output
+            misc.make_sure_path_exists(os.path.dirname(output_prefix))
             self.run_out = {}
-            self.run_out["mapped_pairs"] = IlluminaTwoReadOutput(output_prefix + '.mapped', uncompressed)
-            self.run_out["unmapped_pairs"] = IlluminaTwoReadOutput(output_prefix + '.unmapped', uncompressed)
-            self.run_out["mapped_singles"] = IlluminaOneReadOutput(output_prefix + '.mapped', uncompressed)
-            self.run_out["unmapped_singles"] = IlluminaOneReadOutput(output_prefix + '.unmapped', uncompressed)
+            self.run_out["mappedsam"] = open(output_prefix + '.sam', 'w')
 
             # 0x1 template having multiple segments in sequencing
             # 0x2 each segment properly aligned according to the aligner
@@ -173,11 +172,12 @@ class mappingApp:
             i = 0
             for line in sp_bowtie2_screen(fastq_file1, fastq_file2, fastq_file3, reference, overwrite, sensitivity, procs, minins, maxins):
                 if i % 100000 == 0 and i > 0:
-                    for key in self.run_out:
-                        self.run_out[key].writeReads()
                     if self.verbose:
                         print "Processed: %s, PE in ref: %s, SE in ref: %s" % (i, mapped_pairs_count, mapped_singles_count)
-                if line[0] != "@":  # header line
+                if line[0] == "@":  # header line
+                    # write out to sam
+                    self.run_out["mappedsam"].write(line)
+                else:
                     i += 1
 
                     line2 = line.strip().split()
@@ -188,83 +188,56 @@ class mappingApp:
                         continue
 
                     # Handle SE:
-                    # mapped SE reads have 0x1 set to 0, and 0x4 (third bit) set to 1
+                    # mapped SE reads have 0x1 set to 0, and 0x4 (third bit) set to 1 if mapped
                     if not (flag & 0x1):  # SE READ
                         if not (flag & 0x4):  # MAPPED
-                            ID = line2[0]
-                            if (flag & 0x10):  # reverse complement
-                                line2[9] = reverseComplement(line2[9])
-                                line2[10] = reverse(line2[10])
-                            self.run_out["mapped_singles"].addRead(['\n'.join(['@' + line2[0].replace('_:_', ' '), line2[9], line2[10]])])
-                            mapped_singles_count += 1
+                            if int(line2[4] >= mapq):  # check mapq
+                                if (flag & 0x10):  # reverse complement
+                                    mapped_singles_count += 1
+                                    self.run_out["mappedsam"].write('\t'.join(line2) + '\n')
+                                else:  # forward complement
+                                    mapped_singles_count += 1
+                                    self.run_out["mappedsam"].write('\t'.join(line2) + '\n')
+                            else:  # MAPPED BUT LOW QUAL
+                                mapped_singles_lowqual += 1
                         else:  # UNMAPPED
-                            ID = line2[0]
-                            if (flag & 0x10):  # reverse complement
-                                line2[9] = reverseComplement(line2[9])
-                                line2[10] = reverse(line2[10])
-                            self.run_out["unmapped_singles"].addRead(['\n'.join(['@' + line2[0].replace('_:_', ' '), line2[9], '+', line2[10]])])
                             unmapped_singles_count += 1
                         continue
                     # Handle PE:
                     # logic:  0x1 = multiple segments in sequencing,   0x4 = segment unmapped,  0x8 = next segment unmapped
                     if (flag & 0x1):  # PE READ
-                        if ((not (flag & 0x4) and not (flag & 0x8))):  # at least one of the pair mapped
-                            if (flag & 0x40):  # is this PE1 (first segment in template)
-                                # PE1 read, check that PE2 is in dict and write out
-                                ID = line2[0].split('_:_')[0]
-                                if (flag & 0x10):  # reverse complement
-                                    line2[9] = reverseComplement(line2[9])
-                                    line2[10] = reverse(line2[10])
-                                r1 = '\n'.join(['@' + line2[0].replace('_:_', ' '), line2[9], line2[10]])  # sequence + qual
-                                if ID in PE2:
-                                    self.run_out["mapped_pairs"].addRead([r1, PE2[ID]])
-                                    del PE2[ID]
-                                    mapped_pairs_count += 1
-                                else:
-                                    PE1[ID] = r1
-                            elif (flag & 0x80):  # is this PE2 (last segment in template)
-                                # PE2 read, check that PE1 is in dict and write out
-                                ID = line2[0].split('_:_')[0]
-                                if (flag & 0x10):  # reverse complement
-                                    line2[9] = reverseComplement(line2[9])
-                                    line2[10] = reverse(line2[10])
-                                r2 = '\n'.join(['@' + line2[0].replace('_:_', ' '), line2[9], line2[10]])
-                                if ID in PE1:
-                                    self.run_out["mapped_pairs"].addRead([PE1[ID], r2])
-                                    del PE1[ID]
-                                    mapped_pairs_count += 1
-                                else:
-                                    PE2[ID] = r2
-                        else:  # an 'unmapped' pair
-                            if (flag & 0x40):  # is this PE1 (first segment in template)
-                                # PE1 read, check that PE2 is in dict and write out
-                                ID = line2[0].split('_:_')[0]
-                                if (flag & 0x10):  # reverse complement
-                                    line2[9] = reverseComplement(line2[9])
-                                    line2[10] = reverse(line2[10])
-                                r1 = '\n'.join(['@' + line2[0].replace('_:_', ' '), line2[9], line2[10]])  # sequence + qual
-                                if ID in PE2:
-                                    self.run_out["unmapped_pairs"].addRead([r1, PE2[ID]])
-                                    del PE2[ID]
-                                    unmapped_pairs_count += 1
-                                else:
-                                    PE1[ID] = r1
-                            elif (flag & 0x80):  # is this PE2 (last segment in template)
-                                # PE2 read, check that PE1 is in dict and write out
-                                ID = line2[0].split('_:_')[0]
-                                if (flag & 0x10):  # reverse complement
-                                    line2[9] = reverseComplement(line2[9])
-                                    line2[10] = reverse(line2[10])
-                                r2 = '\n'.join(['@' + line2[0].replace('_:_', ' '), line2[9], line2[10]])
-                                if ID in PE1:
-                                    self.run_out["unmapped_pairs"].addRead([PE1[ID], r1])
-                                    del PE1[ID]
-                                    unmapped_pairs_count += 1
-                                else:
-                                    PE2[ID] = r2
-            # Write out reads
-            for key in self.run_out:
-                self.run_out[key].writeReads()
+                        if ((not (flag & 0x4) and not (flag & 0x8)) and (flag & 0x2)):  # both pair mapped and concordant
+                            if int(line2[4] >= mapq):  # check mapq
+                                if (flag & 0x40):  # is this PE1 (first segment in template)
+                                    # PE1 read, check that PE2 is in dict and write out
+                                    ID = line2[0]
+                                    if (flag & 0x10):  # reverse complement
+                                        line2[1] = str(flag - 0x1 - 0x2 - 0x40)  # modify read1 flag (remove read2 assoc flags)
+                                    else:  # forward complements
+                                        line2[1] = str(flag - 0x1 - 0x2 - 0x20 - 0x40)  # modify read1 flag (remove read2 assoc flags)
+                                    if ID in PE2:
+                                        mapped_pairs_count += 1
+                                        self.run_out["mappedsam"].write('\t'.join(line2) + '\n')
+                                        del PE2[ID]
+                                    else:
+                                        PE1[ID] = line2
+                                elif (flag & 0x80):  # is this PE2 (last segment in template)
+                                    # PE2 read, check that PE1 is in dict and write out
+                                    ID = line2[0]
+                                    if (flag & 0x10):  # reverse complement
+                                        line2[1] = str(flag - 0x1 - 0x2 - 0x40)  # modify read1 flag to be revcomp (remove read2 assoc flags)
+                                    else:  # forward complements
+                                        line2[1] = str(flag - 0x1 - 0x2 - 0x20 - 0x40)  # modify read1 flasg to be forcomp (remove read2 assoc flags)
+                                    if ID in PE1:
+                                        mapped_pairs_count += 1
+                                        self.run_out["mappedsam"].write('\t'.join(PE1[ID]) + '\n')
+                                        del PE1[ID]
+                                    else:
+                                        PE2[ID] = line2
+                            else:
+                                mapped_pairs_lowqual += 1
+                        else:  # an 'unmapped' pair (both pairs unmapped, one of pair unmapped, or both mapped but discordant)
+                            unmapped_pairs_count += 1
 
             print "Records processed: %s, PE in ref: %s, SE in ref: %s" % (i, mapped_pairs_count, mapped_singles_count)
 
@@ -287,6 +260,7 @@ class mappingApp:
         if self.verbose:
             sys.stderr.write("Cleaning up.\n")
         try:
+            self.run_out.close()
             pass
         except:
             pass
