@@ -1,7 +1,6 @@
 # preprocess_app.py
 #
 import sys
-import os
 import traceback
 import time
 from TnAmplicons import primerTable
@@ -9,7 +8,6 @@ from TnAmplicons import primerTable
 from TnAmplicons import TwoReadIlluminaRun
 from TnAmplicons import IlluminaTwoReadOutput
 from TnAmplicons import validateApp
-from TnAmplicons import misc
 
 
 class preprocessApp:
@@ -20,7 +18,7 @@ class preprocessApp:
     def __init__(self):
         self.verbose = False
 
-    def start(self, fastq_file1, fastq_file2, output_prefix, primerFile, primerMaxDiff=4, primerEndMatch=4, batchsize=10000, uncompressed=False, output_unidentified=False, minQ=None, minL=0, verbose=True, debug=False, kprimer=False, test=False):
+    def start(self, fastq_file1, fastq_file2, output_prefix, primerFile, primerMaxDiff=4, primerEndMatch=4, insertionSite='TA', batchsize=10000, uncompressed=False, output_unidentified=False, minQ=None, minL=0, verbose=True, debug=False, test=False):
         """
         Start preprocessing double barcoded Illumina sequencing run, perform
         """

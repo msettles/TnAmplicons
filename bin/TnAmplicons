@@ -39,13 +39,13 @@ def validateParser(subparsers):
     #
     validate_parser = subparsers.add_parser('validate', help='validate the sample, barcode and primer sheets')
     validate_parser.add_argument('-P', '--primer_file', help='file with primers',
-                        action='store', type=str, dest='primer_file', metavar='FILENAME', required=True)
+                                 action='store', type=str, dest='primer_file', metavar='FILENAME', required=True)
     validate_parser.add_argument('-S', '--sample_metadata', help='file with sample metadata',
-                        action='store', type=str, dest='samples_file', metavar='FILENAME', required=True)
+                                 action='store', type=str, dest='samples_file', metavar='FILENAME', required=True)
     validate_parser.add_argument('-v', '--silent', help='silences verbose output [default: %(default)s]',
-                        action='store_true', dest='verbose', default=False)
+                                 action='store_true', dest='verbose', default=False)
     validate_parser.add_argument('--debug', help='show traceback on error',
-                        action='store_true', dest="debug", default=False)
+                                 action='store_true', dest="debug", default=False)
     return validate_parser
 
 
@@ -83,38 +83,38 @@ def preprocessParser(subparsers):
     # Parse options
     #
     preprocess_parser = subparsers.add_parser('preprocess', help='Preprocess two read raw TnSeq amplicon data, identifying primer sequences and TA genomic insertion site')
-    preprocess_parser.add_argument('-P', '--primer_file', help='file with primers',
-                        action='store', type=str, dest='primer_file', metavar='FILENAME', default=None)
-    preprocess_parser.add_argument('-d', '--primerdiff', help='max hamming dist from primer [default: %(default)s]',
-                        type=int, dest='primerdiff', default=4)
-    preprocess_parser.add_argument('-e', '--primerend', help='required number of matching bases at end of primer [default: %(default)s]',
-                        type=int, dest='primerend', default=4)
-    preprocess_parser.add_argument('-t', '--insersionSite', help='The expected genomic insersion site [default: %(default)s]',
-                        action='store', type=str, dest='insertionSite', metavar='TA', default='TA')
     preprocess_parser.add_argument('-S', '--sample_file', help='tab delimited file for multi-sample processing (NOT YET FUNCTIONAL) [default: %(default)s]',
-                        action='store', type=str, dest='samples_file', metavar='FILENAME', default=None)
+                                   action='store', type=str, dest='samples_file', metavar='FILENAME', default=None)
+    preprocess_parser.add_argument('-P', '--primer_file', help='file with primers',
+                                   action='store', type=str, dest='primer_file', metavar='FILENAME', default=None)
+    preprocess_parser.add_argument('-d', '--primerdiff', help='max hamming dist from primer [default: %(default)s]',
+                                   type=int, dest='primerdiff', default=4)
+    preprocess_parser.add_argument('-e', '--primerend', help='required number of matching bases at end of primer [default: %(default)s]',
+                                   type=int, dest='primerend', default=4)
+    preprocess_parser.add_argument('-t', '--insertionSite', help='The expected genomic insertion site [default: %(default)s]',
+                                   action='store', type=str, dest='insertionSite', metavar='TA', default='TA')
     preprocess_parser.add_argument('-q', '--minQ', help="trim 3' end of sequences to minQ [default: %(default)s]",
-                        type=int, dest='minQ', default=None),
+                                   type=int, dest='minQ', default=None),
     preprocess_parser.add_argument('-l', '--minL', help='if minQ is not None, only keep reads that are at least minL length [default: %(default)s]',
-                        type=int, dest='minL', default=0),
+                                   type=int, dest='minL', default=0),
     preprocess_parser.add_argument('-b', '--batchsize', help='batch size to process reads in [default: %(default)s]',
-                        type=int, dest='batchsize', default=100000)
+                                   type=int, dest='batchsize', default=100000)
     preprocess_parser.add_argument('-O', '--output_prefix', help='output file basename [default: fastq_prefix]',
-                        action='store', type=str, dest='output_base', metavar='PREFIX', default=None)
+                                   action='store', type=str, dest='output_base', metavar='PREFIX', default=None)
     preprocess_parser.add_argument('-U', '--output_unidentified', help='output unidentified reads [default: %(default)s]',
-                        action='store_true', dest='unidentified', default=False)
+                                   action='store_true', dest='unidentified', default=False)
     preprocess_parser.add_argument('-u', '--uncompressed', help='leave output files uncompressed [default: %(default)s]',
-                        action='store_true', dest='uncompressed', default=False)
+                                   action='store_true', dest='uncompressed', default=False)
     preprocess_parser.add_argument('-v', '--silent', help='silences verbose output [default: %(default)s]',
-                        action='store_true', dest='verbose', default=False)
+                                   action='store_true', dest='verbose', default=False)
     preprocess_parser.add_argument('-1', metavar="read1", dest='fastq_file1', help='read1 of an amplicon fastq four file set',
-                        action='store', type=str, required=True, nargs='+')
+                                   action='store', type=str, required=True, nargs='+')
     preprocess_parser.add_argument('-2', metavar="read2", dest='fastq_file2', help='read2 of an amplicon fastq four file set',
-                        action='store', type=str, required=False, nargs='+')
+                                   action='store', type=str, required=False, nargs='+')
     preprocess_parser.add_argument('--test', help='exit after the first batch in order to test the inputs',
-                        action='store_true', dest="test", default=False)
+                                   action='store_true', dest="test", default=False)
     preprocess_parser.add_argument('--debug', help='show traceback on error',
-                        action='store_true', dest="debug", default=False)
+                                   action='store_true', dest="debug", default=False)
     return preprocess_parser
 
 
@@ -150,10 +150,10 @@ class preprocessCMD:
 
         if profile:
             import cProfile
-            cProfile.runctx('app.start(args.fastq_file1, args.fastq_file2, output_prefix, prFile, args.primerdiff, args.primerend, args.batchsize, args.uncompressed, args.unidentified, args.minQ, args.minL, verbose, args.debug, args.test)', globals(), locals())
+            cProfile.runctx('app.start(args.fastq_file1, args.fastq_file2, output_prefix, prFile, args.primerdiff, args.primerend, args.insertionSite, args.batchsize, args.uncompressed, args.unidentified, args.minQ, args.minL, verbose, args.debug, args.test)', globals(), locals())
             return 255
         else:
-            return app.start(args.fastq_file1, args.fastq_file2, output_prefix, prFile, args.primerdiff, args.primerend, args.batchsize, args.uncompressed, args.unidentified, args.minQ, args.minL, verbose, args.debug, args.test)
+            return app.start(args.fastq_file1, args.fastq_file2, output_prefix, prFile, args.primerdiff, args.primerend, args.insertionSite, args.batchsize, args.uncompressed, args.unidentified, args.minQ, args.minL, verbose, args.debug, args.test)
 
 
 #####################################################################################
@@ -173,30 +173,28 @@ def joinParser(subparsers):
     #
     # Parse options
     #
-    preprocess_parser = subparsers.add_parser('join', help='join reads using flash2')
-    preprocess_parser.add_argument('-O', '--output_path', help='path for output files [default: %(default)s]',
-                        action='store', type=str, dest='output_base', metavar='PREFIX', default="joined")
-    preprocess_parser.add_argument('-u', '--uncompressed', help='leave output files uncompressed [default: %(default)s]',
-                        action='store_true', dest='uncompressed', default=False)
-    preprocess_parser.add_argument('-x', '--max-mismatch-density', help=' Maximum allowed ratio between the number of \
-                          mismatched base pairs and the overlap length. \
-                          Two reads will not be combined with a given overlap \
-                          if that overlap results in a mismatched base density \
-                          higher than this value.  Note: Any occurrence of an \
-                          "N" in either read is ignored and not counted \
-                          towards the mismatches or overlap length. [default:%(default)s]', type=float, dest='max_mixmatch_density', metavar='NUM',
-                          default=0.25)
-    preprocess_parser.add_argument('-t', '--threads', metavar='NTHREADS', help='Set the number of worker threads. [default: %(default)s]',
-                        type=int, dest='threads', default=1)
-#    preprocess_parser.add_argument('-p', '--flash2_path', help='path to the application flash2 [default: %(default)s]',
-#                        action='store', type=str, dest='flash2_path',metavar='path', default='flash2', required=False)
-    preprocess_parser.add_argument('-v', '--verbose', help='verbose output [default: %(default)s]',
-                        action='store_true', dest='verbose', default=True)
-    preprocess_parser.add_argument('-1', metavar="read1", dest='fastq_file1', help='read1 of an amplicon fastq (or fastq.gz) two file set',
-                        action='store', type=str, required=True)
-    preprocess_parser.add_argument('-2', metavar="read2", dest='fastq_file2', help='read2 of an amplicon fastq (or fastq.gz)  two file set',
-                        action='store', type=str, required=False)
-    return preprocess_parser
+    join_parser = subparsers.add_parser('join', help='join reads using flash2')
+    join_parser.add_argument('-O', '--output_path', help='path for output files [default: %(default)s]',
+                             action='store', type=str, dest='output_base', metavar='PREFIX', default="joined")
+    join_parser.add_argument('-u', '--uncompressed', help='leave output files uncompressed [default: %(default)s]',
+                             action='store_true', dest='uncompressed', default=False)
+    join_parser.add_argument('-x', '--max-mismatch-density', help=' Maximum allowed ratio between the number of \
+                                      mismatched base pairs and the overlap length. \
+                                      Two reads will not be combined with a given overlap \
+                                      if that overlap results in a mismatched base density \
+                                      higher than this value.  Note: Any occurrence of an \
+                                      "N" in either read is ignored and not counted \
+                                      towards the mismatches or overlap length. [default:%(default)s]', type=float, dest='max_mixmatch_density', metavar='NUM',
+                             default=0.25)
+    join_parser.add_argument('-t', '--threads', metavar='NTHREADS', help='Set the number of worker threads. [default: %(default)s]',
+                             type=int, dest='threads', default=1)
+    join_parser.add_argument('-v', '--verbose', help='verbose output [default: %(default)s]',
+                             action='store_true', dest='verbose', default=True)
+    join_parser.add_argument('-1', metavar="read1", dest='fastq_file1', help='read1 of an amplicon fastq (or fastq.gz) two file set',
+                             action='store', type=str, required=True)
+    join_parser.add_argument('-2', metavar="read2", dest='fastq_file2', help='read2 of an amplicon fastq (or fastq.gz)  two file set',
+                             action='store', type=str, required=False)
+    return join_parser
 
 
 class joinCMD:
@@ -249,41 +247,45 @@ class joinCMD:
 # screen reads using bowtie2 and a reference file
 def mappingParser(subparsers):
     """
-    screeningParser parser parameters
+    mappingParser parser parameters
     """
     #
     # Parse options
     #
-    screening_parser = subparsers.add_parser('map', help='map reads using bowtie2 to a reference sequence file')
-    screening_parser.add_argument('-p', '--processors', help='number of processors to use in bowtie2, [default: %(default)s]',
-                                  type=int, dest='procs', default=1)
-    screening_parser.add_argument('-u', '--uncompressed', help='leave output files uncompressed [default: %(default)s]',
-                                  action='store_true', dest='uncompressed', default=True)
-    screening_parser.add_argument('-R', '--reference', help='reference fasta file to screen reads against',
-                                  action='store', type=str, dest='reference', metavar='reference.fasta', default=None, required=True)
-    screening_parser.add_argument('-o', '--overwrite', help='If a bowtie2 index already exits overwrite it [default: %(default)s]',
-                                  action='store_true', dest='overwrite', default=False)
-    screening_parser.add_argument('-s', '--sensitivity', help='bowtie2 sensitivity to use 0=--very-fast, 1=--fast, 2=--sensitive, 3=--very-sensitive [default: %(default)s]',
-                                  type=int, dest='sensitivity', default=2)
-    screening_parser.add_argument('-I', '--minins', metavar='<int>', help='minimum fragement length [default: %(defaults)s]',
-                                  type=int, dest='minins', default=0)
-    screening_parser.add_argument('-X', '--maxins', metavar='<int>', help='maximum fragement length [default: %(defaults)s]',
-                                  type=int, dest='maxins', default=700)
-    screening_parser.add_argument('-m', '--mapq', metavar='<int>', help='minimum mapq value to accept read [default: %(defaults)s]',
-                                  type=int, dest='mapq', default=10)
-    screening_parser.add_argument('-O', '--output_path', help='path (and prefix) for output files [default: %(default)s]',
-                                  action='store', type=str, dest='output_base', metavar='outputPrefix', default='screening')
-    screening_parser.add_argument('-1', metavar="read1", dest='fastq_file1', help='read1 of an amplicon fastq two file set',
-                                  action='store', type=str, default=None, required=False, nargs='+')
-    screening_parser.add_argument('-2', metavar="read2", dest='fastq_file2', help='read2 of an amplicon fastq two file set',
-                                  action='store', type=str, default=None, required=False, nargs='+')
-    screening_parser.add_argument('-U', metavar="single", dest='fastq_file3', help='single-end amplicon, typically from joined paired reads',
-                                  action='store', type=str, default=None, required=False, nargs='+')
-    screening_parser.add_argument('-v', '--silent', help='silences verbose output [default: %(default)s]',
-                                  action='store_true', dest='verbose', default=False)
-    screening_parser.add_argument('--debug', help='show traceback on error',
-                                  action='store_true', dest='debug', default=False)
-    return screening_parser
+    mapping_parser = subparsers.add_parser('map', help='map reads using bowtie2 to a reference sequence file')
+    mapping_parser.add_argument('-p', '--processors', help='number of processors to use in bowtie2, [default: %(default)s]',
+                                type=int, dest='procs', default=1)
+    mapping_parser.add_argument('-u', '--uncompressed', help='leave output files uncompressed [default: %(default)s]',
+                                action='store_true', dest='uncompressed', default=True)
+    mapping_parser.add_argument('-R', '--reference', help='reference fasta file to screen reads against',
+                                action='store', type=str, dest='reference', metavar='reference.fasta', default=None, required=True)
+    mapping_parser.add_argument('-t', '--insertionSite', help='The expected genomic insersion site [default: %(default)s]',
+                                action='store', type=str, dest='insertionSite', metavar='TA', default='TA')
+    mapping_parser.add_argument('-o', '--overwrite', help='If a bowtie2 index already exits overwrite it [default: %(default)s]',
+                                action='store_true', dest='overwrite', default=False)
+    mapping_parser.add_argument('-s', '--sensitivity', help='bowtie2 sensitivity to use 0=--very-fast, 1=--fast, 2=--sensitive, 3=--very-sensitive [default: %(default)s]',
+                                type=int, dest='sensitivity', default=2)
+    mapping_parser.add_argument('-I', '--minins', metavar='<int>', help='minimum fragement length [default: %(default)s]',
+                                type=int, dest='minins', default=0)
+    mapping_parser.add_argument('-X', '--maxins', metavar='<int>', help='maximum fragement length [default: %(default)s]',
+                                type=int, dest='maxins', default=700)
+    mapping_parser.add_argument('-m', '--mapq', metavar='<int>', help='minimum mapq value to accept read [default: %(default)s]',
+                                type=int, dest='mapq', default=10)
+    mapping_parser.add_argument('-d', '--dedup', help='Detect PCR Duplicates from primer, molecular index and alignment [default: %(default)s]',
+                                action='store_false', dest='dedupReads', default=True)
+    mapping_parser.add_argument('-O', '--output_path', help='path (and prefix) for output files [default: %(default)s]',
+                                action='store', type=str, dest='output_base', metavar='outputPrefix', default='mapping')
+    mapping_parser.add_argument('-1', metavar="read1", dest='fastq_file1', help='read1 of an amplicon fastq two file set',
+                                action='store', type=str, default=None, required=False, nargs='+')
+    mapping_parser.add_argument('-2', metavar="read2", dest='fastq_file2', help='read2 of an amplicon fastq two file set',
+                                action='store', type=str, default=None, required=False, nargs='+')
+    mapping_parser.add_argument('-U', metavar="single", dest='fastq_file3', help='single-end amplicon, typically from joined paired reads',
+                                action='store', type=str, default=None, required=False, nargs='+')
+    mapping_parser.add_argument('-v', '--silent', help='silences verbose output [default: %(default)s]',
+                                action='store_true', dest='verbose', default=False)
+    mapping_parser.add_argument('--debug', help='show traceback on error',
+                                action='store_true', dest='debug', default=False)
+    return mapping_parser
 
 
 class mappingCMD:
@@ -324,10 +326,10 @@ class mappingCMD:
 
         if profile:
             import cProfile
-            cProfile.runctx('app.start(args.fastq_file1, args.fastq_file2, args.fastq_file3, reference, overwrite, sensitivity, output_prefix, args.minins, args.maxins, procs, args.mapq, uncompressed, verbose, debug)', globals(), locals())
+            cProfile.runctx('app.start(args.fastq_file1, args.fastq_file2, args.fastq_file3, reference, args.insertionSite, overwrite, sensitivity, output_prefix, args.minins, args.maxins, procs, args.mapq, args.dedupReads, uncompressed, verbose, debug)', globals(), locals())
             return 255
         else:
-            return app.start(args.fastq_file1, args.fastq_file2, args.fastq_file3, reference, overwrite, sensitivity, output_prefix, args.minins, args.maxins, procs, args.mapq, uncompressed, verbose, debug)
+            return app.start(args.fastq_file1, args.fastq_file2, args.fastq_file3, reference, args.insertionSite, overwrite, sensitivity, output_prefix, args.minins, args.maxins, procs, args.mapq, args.dedupReads, uncompressed, verbose, debug)
 
 
 #####################################################################################

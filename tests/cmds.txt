@@ -1,3 +1,5 @@
+
 TnAmplicons preprocess -d 4 -P tests/TnPrimers.txt -O 01-Preprocess/test -1 tests/test-200k_R1_001.fastq.gz --debug
 TnAmplicons join -1 01-Preprocess/test_R1.fastq.gz -O 01-Preprocess/test
 TnAmplicons map -p 4 -R tests/757420.3.fna -O 01-Preprocess/mapping -1 01-Preprocess/test.notCombined_1.fastq.gz -2 01-Preprocess/test.notCombined_2.fastq.gz -U 01-Preprocess/test.extendedFrags.fastq.gz
+
