@@ -250,7 +250,7 @@ class mappingApp:
             for line in sp_bowtie2_screen(fastq_file1, fastq_file2, fastq_file3, reference, overwrite, sensitivity, procs, minins, maxins):
                 if i % 100000 == 0 and i > 0:
                     if dedup_reads:
-                        self.dedup_profile.write("%s\t%s\n" % (mapped_pairs_count, mapped_pairs_count-duplicate_count))
+                        self.dedup_profile.write("%s\t%s\n" % ((mapped_pairs_count+mapped_singles_count+duplicate_count), (mapped_pairs_count+mapped_singles_count)))
                     if self.verbose:
                         sys.stderr.write("Processed: %s, PE in ref: %s, SE in ref: %s in %s minutes\n" % (i, mapped_pairs_count, mapped_singles_count, round((time.time()-lasttime)/(60), 2)))
                 if line[0] == "@":  # header line
@@ -355,7 +355,7 @@ class mappingApp:
 
             sys.stderr.write("Processed: %s, PE in ref: %s, SE in ref: %s in %s minutes\n" % (i, mapped_pairs_count, mapped_singles_count, round((time.time()-lasttime)/(60), 2)))
             if dedup_reads:
-                self.dedup_profile.write("%s\t%s\n" % (mapped_pairs_count, mapped_pairs_count-duplicate_count))
+                self.dedup_profile.write("%s\t%s\n" % ((mapped_pairs_count+mapped_singles_count+duplicate_count), (mapped_pairs_count+mapped_singles_count)))
 
             sys.stdout.write("total records: %s\n" % i)
             sys.stdout.write("secondary alignments: %s\n" % secondary_alignment)
