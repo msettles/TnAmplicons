@@ -375,7 +375,6 @@ class mappingApp:
                                         else:  # forward complements
                                             PE1[ID][1] = str(int(PE1[ID][1]) - 0x1 - 0x2 - 0x20 - 0x40)  # modify read1 flag (remove read2 assoc flags)
                                         key = getUniqueKey(PE1[ID], line2)
-                                        print("%s\n%s\n%s\n" % (PE1[ID], line2, key))
                                         if dedup_reads:
                                             count[key] += 1
                                             if count[key] == 1:
@@ -420,23 +419,24 @@ class mappingApp:
             site_output.close()
             wig_output.close()
 
-            data = open("reverse.txt", 'w')
-            for contig in sites.keys():
-                countF = 0
-                sitesF = 0
-                countR = 0
-                sitesR =0
-                for site in site_counts_F[contig].keys():
-                    countF += site_counts_F[contig][site]
-                    sitesF += 1
-                for site in site_counts_R[contig].keys():
-                    countR += site_counts_R[contig][site]
-                    data.write("%s\t%s\n" % (site, site_counts_R[contig][site]))
-                    sitesR += 1
-                print countF
-                print sitesF
-                print countR
-                print sitesR
+            if debug:
+                data = open("reverse.txt", 'w')
+                for contig in sites.keys():
+                    countF = 0
+                    sitesF = 0
+                    countR = 0
+                    sitesR =0
+                    for site in site_counts_F[contig].keys():
+                        countF += site_counts_F[contig][site]
+                        sitesF += 1
+                    for site in site_counts_R[contig].keys():
+                        countR += site_counts_R[contig][site]
+                        data.write("%s\t%s\n" % (site, site_counts_R[contig][site]))
+                        sitesR += 1
+                    print countF
+                    print sitesF
+                    print countR
+                    print sitesR
                 data.close()
 
             sys.stdout.write("total records: %s\n" % i)
