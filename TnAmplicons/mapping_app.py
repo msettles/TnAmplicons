@@ -6,6 +6,7 @@ import time
 import signal
 import re
 from collections import Counter
+from itertools import groupby
 
 from subprocess import Popen
 from subprocess import PIPE
@@ -115,7 +116,7 @@ def reverseComplement(s):
     """
     given a seqeucne with 'A', 'C', 'T', and 'G' return the reverse complement
     """
-    basecomplement = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}
+    basecomplement = {'a': 't', 'A': 'T', 'c': 'g', 'C': 'G', 'g': 'c', 'G': 'C', 't': 'a', 'T': 'A', 'n': 'n', 'N': 'N'}
     letters = list(s)
     try:
         letters = [basecomplement[base] for base in letters]
@@ -190,16 +191,30 @@ def getUniqueKey(r1_line, r2_line=None):
 
     if (flag1 & 0x10):  # if RevComp
         if r2_line is not None:
-            uniquekey = '|'.join([uniquekey, 'R', r1_line[2], str(int(r2_line[3])+cigar2.getAlignmentLength()-1), r1_line[3]])
+            uniquekey = '_*_'.join([uniquekey, 'R', r1_line[2], str(int(r1_line[3])+cigar1.getAlignmentLength()-2), r2_line[3]])
         else:
-            uniquekey = '|'.join([uniquekey, 'R', r1_line[2], str(int(r1_line[3])+cigar1.getAlignmentLength()-1), r1_line[3]])
+            uniquekey = '_*_'.join([uniquekey, 'R', r1_line[2], str(int(r1_line[3])+cigar1.getAlignmentLength()-2), r1_line[3]])
     else:
         if r2_line is not None:
-            uniquekey = '|'.join([uniquekey, 'F', r1_line[2], r1_line[3], str(int(r2_line[3])+cigar2.getAlignmentLength()-1)])
+            uniquekey = '_*_'.join([uniquekey, 'F', r1_line[2], r1_line[3], str(int(r2_line[3])+cigar2.getAlignmentLength()-1)])
         else:
-            uniquekey = '|'.join([uniquekey, 'F', r1_line[2], r1_line[3], str(int(r1_line[3])+cigar1.getAlignmentLength()-1)])
-
+            uniquekey = '_*_'.join([uniquekey, 'F', r1_line[2], r1_line[3], str(int(r1_line[3])+cigar1.getAlignmentLength()-1)])
     return uniquekey
+
+
+def getISites(reference, insertionSite='TA'):
+    # given a reference file and insertion site, identify all possible insertion site locations on both strands
+    sites = {}
+    ref = open(reference)
+    faiter = (list(x[1]) for x in groupby(ref, lambda line: line[0] == ">"))
+    for g in faiter:
+        # drop the ">"
+        header = g[0][1:].strip().split(' ')[0]
+        # join all sequence lines to one.
+        seq = str("".join(s.strip() for s in faiter.next())).upper()
+        sites[header] = [str(m.start() + 1) for m in re.finditer(insertionSite, seq)]
+    # sites keyed by 'contig' ID then vector of sites (RC sites are +1bp away)
+    return sites
 
 
 class mappingApp:
@@ -211,7 +226,6 @@ class mappingApp:
         """
             screen reads against a reference fasta file
         """
-        self.verbose = verbose
         try:
             mapped_pairs_count = 0
             mapped_pairs_lowqual = 0
@@ -226,10 +240,11 @@ class mappingApp:
 
             # Set up output
             misc.make_sure_path_exists(os.path.dirname(output_prefix))
-            self.run_out = {}
-            self.run_out["mappedsam"] = open(output_prefix + '.sam', 'w')
+            run_out = {}
+            run_out["mappedsam"] = open(output_prefix + '.sam', 'w')
+
             if dedup_reads:
-                self.dedup_profile = open(output_prefix + '.duplicate_profile.txt', 'w')
+                dedup_profile = open(output_prefix + '.duplicate_profile.txt', 'w')
 
             # 0x1 template having multiple segments in sequencing
             # 0x2 each segment properly aligned according to the aligner
@@ -245,17 +260,27 @@ class mappingApp:
             PE1 = {}
             PE2 = {}
 
+            # Read in reference and identify all potential insertion sites
+            site_counts_F = {}
+            site_counts_R = {}
+            sites = getISites(reference, insertionSite)
+            for contig in sites.keys():
+                sys.stdout.write("Found %s insertion sites for contig %s\n" % (len(sites[contig]), contig))
+                site_counts_F[contig] = Counter()
+                site_counts_R[contig] = Counter()
+
             i = 0
             lasttime = time.time()
+
             for line in sp_bowtie2_screen(fastq_file1, fastq_file2, fastq_file3, reference, overwrite, sensitivity, procs, minins, maxins):
                 if i % 100000 == 0 and i > 0:
                     if dedup_reads:
-                        self.dedup_profile.write("%s\t%s\n" % ((mapped_pairs_count+mapped_singles_count+duplicate_count), (mapped_pairs_count+mapped_singles_count)))
-                    if self.verbose:
+                        dedup_profile.write("%s\t%s\n" % ((mapped_pairs_count+mapped_singles_count), (mapped_pairs_count+mapped_singles_count+duplicate_count)))
+                    if verbose:
                         sys.stderr.write("Processed: %s, PE in ref: %s, SE in ref: %s in %s minutes\n" % (i, mapped_pairs_count, mapped_singles_count, round((time.time()-lasttime)/(60), 2)))
                 if line[0] == "@":  # header line
                     # write out to sam
-                    self.run_out["mappedsam"].write(line)
+                    run_out["mappedsam"].write(line)
                 else:
                     i += 1
 
@@ -281,17 +306,25 @@ class mappingApp:
                     if not (flag & 0x1):  # SE READ
                         if not (flag & 0x4):  # MAPPED
                             if int(line2[4]) >= mapq:  # check mapq
+                                key = getUniqueKey(line2)
                                 if dedup_reads:
-                                    key = getUniqueKey(line2)
                                     count[key] += 1
                                     if count[key] == 1:
+                                        if key.split('_*_')[1] == 'F':
+                                            site_counts_F[key.split('_*_')[2]][key.split('_*_')[3]] += 1
+                                        else:
+                                            site_counts_R[key.split('_*_')[2]][key.split('_*_')[3]] += 1
                                         mapped_singles_count += 1
-                                        self.run_out["mappedsam"].write('\t'.join(line2) + '\n')
+                                        run_out["mappedsam"].write('\t'.join(line2) + '\n')
                                     else:
                                         duplicate_count += 1
                                 else:
+                                    if key.split('_*_')[1] == 'F':
+                                        site_counts_F[key.split('_*_')[2]][key.split('_*_')[3]] += 1
+                                    else:
+                                        site_counts_R[key.split('_*_')[2]][key.split('_*_')[3]] += 1
                                     mapped_singles_count += 1
-                                    self.run_out["mappedsam"].write('\t'.join(line2) + '\n')
+                                    run_out["mappedsam"].write('\t'.join(line2) + '\n')
                             else:  # MAPPED BUT LOW QUAL
                                 mapped_singles_lowqual += 1
                         else:  # UNMAPPED
@@ -310,17 +343,25 @@ class mappingApp:
                                             line2[1] = str(flag - 0x1 - 0x2 - 0x40)  # modify read1 flag (remove read2 assoc flags)
                                         else:  # forward complements
                                             line2[1] = str(flag - 0x1 - 0x2 - 0x20 - 0x40)  # modify read1 flag (remove read2 assoc flags)
+                                        key = getUniqueKey(line2, PE2[ID])
                                         if dedup_reads:
-                                            key = getUniqueKey(line2, PE2[ID])
                                             count[key] += 1
                                             if count[key] == 1:
+                                                if key.split('_*_')[1] == 'F':
+                                                    site_counts_F[key.split('_*_')[2]][key.split('_*_')[3]] += 1
+                                                else:
+                                                    site_counts_R[key.split('_*_')[2]][key.split('_*_')[3]] += 1
                                                 mapped_pairs_count += 1
-                                                self.run_out["mappedsam"].write('\t'.join(line2) + '\n')
+                                                run_out["mappedsam"].write('\t'.join(line2) + '\n')
                                             else:
                                                 duplicate_count += 1
                                         else:
+                                            if key.split('_*_')[1] == 'F':
+                                                site_counts_F[key.split('_*_')[2]][key.split('_*_')[3]] += 1
+                                            else:
+                                                site_counts_R[key.split('_*_')[2]][key.split('_*_')[3]] += 1
                                             mapped_pairs_count += 1
-                                            self.run_out["mappedsam"].write('\t'.join(line2) + '\n')
+                                            run_out["mappedsam"].write('\t'.join(line2) + '\n')
 
                                         del PE2[ID]
                                     else:
@@ -333,17 +374,26 @@ class mappingApp:
                                             PE1[ID][1] = str(int(PE1[ID][1]) - 0x1 - 0x2 - 0x40)  # modify read1 flag (remove read2 assoc flags)
                                         else:  # forward complements
                                             PE1[ID][1] = str(int(PE1[ID][1]) - 0x1 - 0x2 - 0x20 - 0x40)  # modify read1 flag (remove read2 assoc flags)
+                                        key = getUniqueKey(PE1[ID], line2)
+                                        print("%s\n%s\n%s\n" % (PE1[ID], line2, key))
                                         if dedup_reads:
-                                            key = getUniqueKey(PE1[ID], line2)
                                             count[key] += 1
                                             if count[key] == 1:
+                                                if key.split('_*_')[1] == 'F':
+                                                    site_counts_F[key.split('_*_')[2]][key.split('_*_')[3]] += 1
+                                                else:
+                                                    site_counts_R[key.split('_*_')[2]][key.split('_*_')[3]] += 1
                                                 mapped_pairs_count += 1
-                                                self.run_out["mappedsam"].write('\t'.join(PE1[ID]) + '\n')
+                                                run_out["mappedsam"].write('\t'.join(PE1[ID]) + '\n')
                                             else:
                                                 duplicate_count += 1
                                         else:
+                                            if key.split('_*_')[1] == 'F':
+                                                site_counts_F[key.split('_*_')[2]][key.split('_*_')[3]] += 1
+                                            else:
+                                                site_counts_R[key.split('_*_')[2]][key.split('_*_')[3]] += 1
                                             mapped_pairs_count += 1
-                                            self.run_out["mappedsam"].write('\t'.join(PE1[ID]) + '\n')
+                                            run_out["mappedsam"].write('\t'.join(PE1[ID]) + '\n')
 
                                         del PE1[ID]
                                     else:
@@ -354,8 +404,40 @@ class mappingApp:
                             unmapped_pairs_count += 1
 
             sys.stderr.write("Processed: %s, PE in ref: %s, SE in ref: %s in %s minutes\n" % (i, mapped_pairs_count, mapped_singles_count, round((time.time()-lasttime)/(60), 2)))
+
             if dedup_reads:
-                self.dedup_profile.write("%s\t%s\n" % ((mapped_pairs_count+mapped_singles_count+duplicate_count), (mapped_pairs_count+mapped_singles_count)))
+                dedup_profile.write("%s\t%s\n" % ((mapped_pairs_count+mapped_singles_count), (mapped_pairs_count+mapped_singles_count+duplicate_count)))
+                dedup_profile.close()
+
+            site_output = open(output_prefix + '.sites', 'w')
+            wig_output = open(output_prefix + '.wig', 'w')
+            wig_output.write("# output:%s fastq1:%s fastq2:%s fastq3:%s\n" % (output_prefix, fastq_file1, fastq_file2, fastq_file3))
+            for contig in sites.keys():
+                wig_output.write("variableStep chrom=%s\n" % contig)
+                for site in sites[contig]:
+                    site_output.write("%s\t%s\t%s\t%s\n" % (contig, site, site_counts_F[contig][site], site_counts_R[contig][site]))
+                    wig_output.write("%s %s\n" % (site, str(int(site_counts_F[contig][site]) + int(site_counts_R[contig][site]))))
+            site_output.close()
+            wig_output.close()
+
+            data = open("reverse.txt", 'w')
+            for contig in sites.keys():
+                countF = 0
+                sitesF = 0
+                countR = 0
+                sitesR =0
+                for site in site_counts_F[contig].keys():
+                    countF += site_counts_F[contig][site]
+                    sitesF += 1
+                for site in site_counts_R[contig].keys():
+                    countR += site_counts_R[contig][site]
+                    data.write("%s\t%s\n" % (site, site_counts_R[contig][site]))
+                    sitesR += 1
+                print countF
+                print sitesF
+                print countR
+                print sitesR
+                data.close()
 
             sys.stdout.write("total records: %s\n" % i)
             sys.stdout.write("secondary alignments: %s\n" % secondary_alignment)
@@ -392,6 +474,7 @@ class mappingApp:
             for key in self.run_out:
                 self.run_out[key].close()
             self.dedup_profile.close()
+            self.site_output.close()
             pass
         except:
             pass
