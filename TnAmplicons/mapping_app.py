@@ -243,8 +243,7 @@ class mappingApp:
             run_out = {}
             run_out["mappedsam"] = open(output_prefix + '.sam', 'w')
 
-            if dedup_reads:
-                dedup_profile = open(output_prefix + '.duplicate_profile.txt', 'w')
+            read_profile = open(output_prefix + '.TnRead_profile.txt', 'w')
 
             # 0x1 template having multiple segments in sequencing
             # 0x2 each segment properly aligned according to the aligner
@@ -273,10 +272,9 @@ class mappingApp:
             lasttime = time.time()
 
             for line in sp_bowtie2_screen(fastq_file1, fastq_file2, fastq_file3, reference, overwrite, sensitivity, procs, minins, maxins):
-                if i % 100000 == 0 and i > 0:
-                    if dedup_reads:
-                        dedup_profile.write("%s\t%s\n" % ((mapped_pairs_count+mapped_singles_count), (mapped_pairs_count+mapped_singles_count+duplicate_count)))
-                    if verbose:
+                if i % 10000 == 0 and i > 0:
+                    read_profile.write("%s\t%s\t%s\t%s\t%s\n" % (i, (mapped_pairs_count+mapped_singles_count), (mapped_pairs_count+mapped_singles_count+duplicate_count), sum(len(site_counts_F[c]) for c in site_counts_F.keys()), sum(len(site_counts_R[c]) for c in site_counts_R.keys())))
+                if i % 100000 == 0 and i > 0 and verbose:
                         sys.stderr.write("Processed: %s, PE in ref: %s, SE in ref: %s in %s minutes\n" % (i, mapped_pairs_count, mapped_singles_count, round((time.time()-lasttime)/(60), 2)))
                 if line[0] == "@":  # header line
                     # write out to sam
@@ -404,9 +402,8 @@ class mappingApp:
 
             sys.stderr.write("Processed: %s, PE in ref: %s, SE in ref: %s in %s minutes\n" % (i, mapped_pairs_count, mapped_singles_count, round((time.time()-lasttime)/(60), 2)))
 
-            if dedup_reads:
-                dedup_profile.write("%s\t%s\n" % ((mapped_pairs_count+mapped_singles_count), (mapped_pairs_count+mapped_singles_count+duplicate_count)))
-                dedup_profile.close()
+            read_profile.write("%s\t%s\t%s\t%s\t%s\n" % (i, (mapped_pairs_count+mapped_singles_count), (mapped_pairs_count+mapped_singles_count+duplicate_count), sum(len(site_counts_F[c]) for c in site_counts_F.keys()), sum(len(site_counts_R[c]) for c in site_counts_R.keys())))
+            read_profile.close()
 
             site_output = open(output_prefix + '.sites', 'w')
             wig_output = open(output_prefix + '.wig', 'w')
@@ -473,7 +470,7 @@ class mappingApp:
         try:
             for key in self.run_out:
                 self.run_out[key].close()
-            self.dedup_profile.close()
+            self.read_profile.close()
             self.site_output.close()
             pass
         except:

@@ -19,6 +19,12 @@ except ImportError:
 editdist = Extension('editdist', sources=['lib/editdist.c'])
 trim = Extension('trim', sources=['lib/trim.c'])
 
+try:
+    version_num = open("VERSION", "r+").readline().strip()
+except:
+    sys.stderr.write("Error retrieving version_number")
+
+
 config = \
     {
         'description': 'Processing of Illumina amplicon projects - TnSeq version',
@@ -26,7 +32,7 @@ config = \
         'url': 'https://github.com/msettles/TnAmplicons',
         'download_url': 'https://github.com/msettles/TnAmplicons',
         'author_email': 'settles@ucdavis.edu',
-        'version': 'v0.0.1-02032016',
+        'version': version_num,
         'install_requires': [],
         'packages': ['TnAmplicons'],
         'scripts': ['bin/TnAmplicons'],

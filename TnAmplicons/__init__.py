@@ -22,3 +22,5 @@ from illuminaRun import IlluminaFastaOutput
 from validate_app import validateApp
 from preprocess_app import preprocessApp
 from mapping_app import mappingApp
+
+from ._versioninfo import version_num, __version__

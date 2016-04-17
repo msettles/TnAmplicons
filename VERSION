@@ -1,0 +1,6 @@
+0.2.0
+
+version 0.1.0
+initial release add support for preprocess, join and mapping
+version 0.2.0
+Mapping solidified, versioning check implemented, produces wig

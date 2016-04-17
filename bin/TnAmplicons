@@ -20,12 +20,12 @@ from multiprocessing import cpu_count
 
 from distutils import spawn
 
+try:
+    from TnAmplicons import version_num
+except ImportError:
+    version_num = "error importing version number"
+
 profile = False
-
-# version 0.0.1
-# initial release pulled from genAmplicons
-
-version_num = "v0.0.1-02032016"
 
 
 #####################################################################################
@@ -339,9 +339,9 @@ def parseArgs():
     generate main parser
     """
     parser = argparse.ArgumentParser(
-        description='TnAmplicons, a python package for preprocessing of generica Illumina Amplicons',
-        epilog='For questions or comments, please contact Matt Settles <settles@ucdavis.edu>', add_help=True)
-    parser.add_argument('--version', action='version', version="%(prog)s Version " + version_num)
+        description='TnAmplicons, a python package for processing TnSeq Illumina Amplicons',
+        epilog='For questions or comments, please contact Matt Settles <settles@ucdavis.edu>\n%(prog)s version: ' + version_num, add_help=True)
+    parser.add_argument('--version', action='version', version="%(prog)s version: " + version_num)
     subparsers = parser.add_subparsers(help='commands', dest='command')
 
     validateParser(subparsers)
