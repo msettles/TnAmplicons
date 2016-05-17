@@ -11,7 +11,7 @@ from itertools import groupby
 from subprocess import Popen
 from subprocess import PIPE
 
-from dbcAmplicons import misc
+from TnAmplicons import misc
 
 
 def sp_bowtie2_index(ref, overwrite=False):

@@ -1,6 +1,8 @@
-0.2.0-20160416
+0.2.1-20160517
 
 version 0.1.0
 initial release add support for preprocess, join and mapping
 version 0.2.0
 Mapping solidified, versioning check implemented, produces wig
+version 0.2.1
+minor fixes, functionalify unchanged

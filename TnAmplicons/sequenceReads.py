@@ -57,7 +57,7 @@ def primerDist(primer_l, read, dedup_float, max_diff, end_match):
     return (pr, prMismatch, prStartPosition, prEndPosition)
 
 
-# ---------------- Class for 2 read sequence data processed with dbcAmplicons preprocess ----------------
+# ---------------- Class for 2 read sequence data processed with TnAmplicons preprocess ----------------
 class TwoSequenceReadSet:
     """
     Class to hold one Illumina two read set.
@@ -153,7 +153,7 @@ class TwoSequenceReadSet:
         if self.primer[0] is not None:
             read1_name = "%s*%s|Linker*%s*%s|%s|%s*%s*%s*%s*%s 1:N:0:%s" % (self.name, self.barcode, self.linker[0], self.linker[1], self.MI2, self.primer[0], self.primer[1], self.primer[2], self.primer[5], self.primer[6], self.barcode)
             read2_name = "%s*%s|Linker*%s*%s|%s|%s*%s*%s*%s*%s 2:N:0:%s" % (self.name, self.barcode, self.linker[0], self.linker[1], self.MI2, self.primer[0], self.primer[1], self.primer[2], self.primer[5], self.primer[6], self.barcode)
-            r1 = '\n'.join([read1_name, self.read_1[(self.primer[4]-2):self.trim_left], '+', self.qual_1[(self.primer[4]-2):self.trim_left]])
+            r1 = '\n'.join([read1_name, self.read_1[(self.primer[4] - 2):self.trim_left], '+', self.qual_1[(self.primer[4] - 2):self.trim_left]])
             r2 = '\n'.join([read2_name, self.read_2[self.primer[8]:self.trim_right], '+', self.qual_2[self.primer[8]:self.trim_right]])
         else:
             read1_name = "%s 1:N:0:%s" % (self.name, self.barcode)
@@ -163,7 +163,7 @@ class TwoSequenceReadSet:
         return [r1, r2]
 
 
-# ---------------- Class for 2 read sequence data processed with dbcAmplicons preprocess ----------------
+# ---------------- Class for 2 read sequence data processed with TnAmplicons preprocess ----------------
 class OneSequenceReadSet:
     """
     Class to hold a one Illumina read set, assumes the paired reads produced by dbcAmplicons preprocess have been merged

@@ -10,6 +10,8 @@ genome.
 Later version will exand on analysis
 '''
 
+import sys
+
 try:
     from setuptools import setup, Extension
 except ImportError:

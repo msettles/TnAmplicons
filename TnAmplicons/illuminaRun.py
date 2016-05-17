@@ -14,7 +14,7 @@ from TnAmplicons import misc
 class TwoReadIlluminaRun:
     """
     Class to open/close and read a two read illumina sequencing run. Data is expected to be in
-    fastq format (possibly gzipped) first processed with dbcAmplicons preprocess subroutine
+    fastq format (possibly gzipped) first processed with TnAmplicons preprocess subroutine
     """
     def __init__(self, read1, read2):
         """
@@ -142,7 +142,7 @@ class TwoReadIlluminaRun:
 class OneReadIlluminaRun:
     """
     Class to open/close and read a one read illumina sequencing run. Data is expected to be in
-    fastq format (possibly gzipped), first processed with dbcAmplicons preprocess subroutine and
+    fastq format (possibly gzipped), first processed with TnAmplicons preprocess subroutine and
     then joined using some method like flash.
     """
     def __init__(self, read1):
