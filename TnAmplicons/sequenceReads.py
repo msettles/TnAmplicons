@@ -166,7 +166,7 @@ class TwoSequenceReadSet:
 # ---------------- Class for 2 read sequence data processed with TnAmplicons preprocess ----------------
 class OneSequenceReadSet:
     """
-    Class to hold a one Illumina read set, assumes the paired reads produced by dbcAmplicons preprocess have been merged
+    Class to hold a one Illumina read set, assumes the paired reads produced by TnAmplicons preprocess have been merged
     """
     def __init__(self, name_1, read_1, qual_1):
         """
